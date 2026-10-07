@@ -12,5 +12,8 @@
       ".firebaserc",
       "README-Firebase.txt"
     ]
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }
