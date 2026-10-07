@@ -1,0 +1,12 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.uid == "DPOfZKEEhogjxeEgoKijthen7gZ2"; }
+
+    match /customers/{userId} {
+      allow read, create, update: if isAdmin() || (signedIn() && request.auth.uid == userId);
+      allow delete: if isAdmin();
+    }
+  }
+}
