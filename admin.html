@@ -70,15 +70,32 @@ $('search').oninput=render;$('customersTab').onclick=()=>{$('customersSection').
 $('settingsTab').onclick=async()=>{$('customersSection').style.display='none';$('settingsSection').style.display='block';await loadSettings()};
 $('logoFile').onchange=e=>{const f=e.target.files?.[0];if(f)$('logoPreview').src=URL.createObjectURL(f)};
 $('stampFile').onchange=e=>{const f=e.target.files?.[0];if(f)$('stampPreview').src=URL.createObjectURL(f)};
-$('saveSettings').onclick=async()=>{const b=$('saveSettings');b.disabled=true;b.textContent='جارٍ الحفظ...';try{
- let logoUrl=settings.logoUrl||'assets/logo.svg',stampUrl=settings.stampUrl||'';
- const lf=$('logoFile').files?.[0],sf=$('stampFile').files?.[0];
- if(lf){const r=ref(storage,'admin-assets/logo-'+Date.now());await uploadBytes(r,lf);logoUrl=await getDownloadURL(r)}
- if(sf){const r=ref(storage,'admin-assets/stamp-'+Date.now());await uploadBytes(r,sf);stampUrl=await getDownloadURL(r)}
- const total=Math.max(1,Math.min(20,+$('totalStamps').value||10)),gift=$('giftText').value.trim()||`${total} أختام = هدية 🎁`;
- const rawStore=$('storeUrl').value.trim();let storeUrl='';if(rawStore){try{const u=new URL(rawStore);if(!/^https?:$/.test(u.protocol))throw new Error('bad');storeUrl=u.href}catch(_){toast('رابط المتجر غير صحيح، استخدم https:// أو http://');return}}
- settings={...settings,logoUrl,stampUrl,cardTitle:$('cardTitle').value.trim()||'مناحل شيخ الجبل',cardSubtitle:$('cardSubtitle').value.trim()||'العسل الحضرمي',totalStamps:total,giftText:gift,storeUrl,cardStart:$('cardStart').value,cardEnd:$('cardEnd').value,updatedAt:serverTimestamp()};
- await setDoc(doc(db,'settings','site'),settings,{merge:true});$('logoFile').value='';$('stampFile').value='';await loadSettings();toast('تم حفظ الإعدادات بنجاح')}
- catch(e){toast(friendly(e))}finally{b.disabled=false;b.textContent='حفظ الإعدادات'}};
+$('saveSettings').onclick=async()=>{
+ const b=$('saveSettings');
+ b.disabled=true;b.textContent='جارٍ الحفظ...';
+ try{
+   let logoUrl=settings.logoUrl||'assets/logo.svg',stampUrl=settings.stampUrl||'';
+   const lf=$('logoFile').files?.[0],sf=$('stampFile').files?.[0];
+   if(lf){const r=ref(storage,'admin-assets/logo-'+Date.now());await Promise.race([uploadBytes(r,lf),new Promise((_,rej)=>setTimeout(()=>rej(new Error('storage-timeout')),20000))]);logoUrl=await getDownloadURL(r)}
+   if(sf){const r=ref(storage,'admin-assets/stamp-'+Date.now());await Promise.race([uploadBytes(r,sf),new Promise((_,rej)=>setTimeout(()=>rej(new Error('storage-timeout')),20000))]);stampUrl=await getDownloadURL(r)}
+   const total=Math.max(1,Math.min(20,+$('totalStamps').value||10));
+   const gift=$('giftText').value.trim()||`${total} أختام = هدية 🎁`;
+   const rawStore=$('storeUrl').value.trim();
+   let storeUrl='';
+   if(rawStore){
+     try{const normalized=/^https?:\/\//i.test(rawStore)?rawStore:'https://'+rawStore;const u=new URL(normalized);if(!/^https?:$/.test(u.protocol))throw new Error('bad');storeUrl=u.href}
+     catch(_){throw new Error('bad-store-url')}
+   }
+   const payload={logoUrl,stampUrl,cardTitle:$('cardTitle').value.trim()||'مناحل شيخ الجبل',cardSubtitle:$('cardSubtitle').value.trim()||'العسل الحضرمي',totalStamps:total,giftText:gift,storeUrl,cardStart:$('cardStart').value||'#e7b64f',cardEnd:$('cardEnd').value||'#b87520',updatedAt:serverTimestamp()};
+   await Promise.race([setDoc(doc(db,'settings','site'),payload,{merge:true}),new Promise((_,rej)=>setTimeout(()=>rej(new Error('firestore-timeout')),20000))]);
+   settings={...settings,...payload};
+   $('logoFile').value='';$('stampFile').value='';
+   await loadSettings();
+   toast('تم حفظ الإعدادات بنجاح');
+ }catch(e){
+   const m=e?.message||'';
+   toast(m==='bad-store-url'?'رابط المتجر غير صحيح':m==='storage-timeout'?'رفع الصورة استغرق وقتًا طويلًا، تحقق من Storage':m==='firestore-timeout'?'الحفظ استغرق وقتًا طويلًا، تحقق من Firestore والقواعد':friendly(e));
+ }finally{b.disabled=false;b.textContent='حفظ الإعدادات'}
+};
 $('out').onclick=()=>signOut(auth);
 </script></body></html>
