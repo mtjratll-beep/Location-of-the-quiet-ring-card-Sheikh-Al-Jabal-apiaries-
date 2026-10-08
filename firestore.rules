@@ -2,13 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
-    function isAdmin() { return signedIn() && request.auth.uid == "DPOfZKEEhogjxeEgoKijthen7gZ2"; }
-
+    function isAdmin() { return signedIn() && (request.auth.uid == "DPOfZKEEhogjxeEgoKijthen7gZ2" || request.auth.token.email == "a777052026@gmail.com"); }
     match /customers/{userId} {
       allow read, create, update: if isAdmin() || (signedIn() && request.auth.uid == userId);
       allow delete: if isAdmin();
     }
-
     match /settings/{settingId} {
       allow read: if signedIn();
       allow write: if isAdmin();

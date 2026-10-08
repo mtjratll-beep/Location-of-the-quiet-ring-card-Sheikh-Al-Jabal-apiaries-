@@ -3,7 +3,7 @@ service firebase.storage {
   match /b/{bucket}/o {
     match /admin-assets/{allPaths=**} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == "DPOfZKEEhogjxeEgoKijthen7gZ2";
+      allow write: if request.auth != null && (request.auth.uid == "DPOfZKEEhogjxeEgoKijthen7gZ2" || request.auth.token.email == "a777052026@gmail.com");
     }
   }
 }
