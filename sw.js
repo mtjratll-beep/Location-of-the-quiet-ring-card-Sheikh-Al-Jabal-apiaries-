@@ -1,5 +1,5 @@
 /* Offline shell for Manahil Sheikh Al-Jabal. Service workers require HTTPS (or localhost). */
-const CACHE_NAME = 'manahil-sheikh-jabal-v2';
+const CACHE_NAME = 'manahil-sheikh-jabal-v3';
 const APP_SHELL = [
   './', './index.html', './admin.html', './manifest.webmanifest',
   './icon-192.png', './icon-512.png', './logo-mg.jpg',
